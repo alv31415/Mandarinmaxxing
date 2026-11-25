@@ -1,0 +1,19 @@
+{
+  "name": "mandarinmaxxing",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Personal Mandarin flashcards: spaced repetition, character breakdowns, stats, suggestions.",
+  "scripts": {
+    "start": "node server.js",
+    "setup": "node scripts/setup.js",
+    "import": "node scripts/import-deck.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.14.0"
+  }
+}

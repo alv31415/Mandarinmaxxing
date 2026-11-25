@@ -125,6 +125,19 @@ function treeView(tree) {
       h('span', {}, 'Click anything to look inside it.')));
 }
 
+/**
+ * "Why it is built this way": shows the dictionary's short answer at once, then swaps in
+ * Claude's fuller sentence when it arrives (cached on the server, so each item is asked once).
+ */
+function whyBox(text, offline) {
+  const body = h('p', { class: 'why-text' }, offline || (settings.ai ? '…' : ''));
+  const box = h('div', { class: 'why', hidden: !offline && !settings.ai }, h('div', { class: 'why-label' }, 'Why it is built this way'), body);
+  if (settings.ai) api('GET', '/why?text=' + encodeURIComponent(text)).then((r) => {
+    if (r.why) body.textContent = r.why; else if (!offline) box.hidden = true;
+  }).catch(() => { if (!offline) box.hidden = true; });
+  return box;
+}
+
 const panel = $('#panel');
 function closePanel() { panel.hidden = true; panel.replaceChildren(); }
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePanel(); });
@@ -137,17 +150,15 @@ async function openPanel(node) {
   const addBtn = (hanzi, label = 'Add as card') => h('button', { class: 'btn', onclick: () => { closePanel(); location.hash = '#/add?text=' + encodeURIComponent(hanzi); } }, label);
 
   if (!single) { // a word or phrase
-    add(panel, h('div', { class: 'glyph' }, zh(text, node.pinyin || '')), h('p', {}, node.gloss || ''),
+    add(panel, h('div', { class: 'glyph' }, zh(text, node.pinyin || '')), h('p', {}, node.gloss || ''), whyBox(text, ''),
       h('div', { class: 'row' }, node.noteId ? h('a', { class: 'btn', href: '#/note/' + node.noteId, onclick: closePanel }, 'Open card') : addBtn(text)));
     return;
   }
   const d = await api('GET', '/char/' + encodeURIComponent(text));
-  const e = d.etymology;
   add(panel, 
     h('div', { class: 'glyph' }, text),
     h('p', {}, h('b', {}, d.pinyin.join(', ')), d.pinyin.length ? ' · ' : '', d.definition || h('span', { class: 'muted' }, 'A building block with no meaning of its own on record.')),
-    e?.hint && h('p', { class: 'muted small' }, e.type ? e.type[0].toUpperCase() + e.type.slice(1) + ': ' : '', e.hint,
-      e.semantic ? ` — meaning from ${e.semantic}` : '', e.phonetic ? `, sound from ${e.phonetic}` : ''),
+    whyBox(text, d.why),
     h('div', { class: 'row' },
       d.noteId ? h('a', { class: 'btn', href: '#/note/' + d.noteId, onclick: closePanel }, 'Open card') : (HAN.test(text) && d.definition ? addBtn(text) : null)),
     d.notes.length ? [h('h2', {}, `In ${d.notes.length} of your cards`),

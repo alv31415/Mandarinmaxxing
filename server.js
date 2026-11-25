@@ -6,10 +6,10 @@ import path from 'node:path';
 import { openDb, getSettings, setSettings, ROOT } from './lib/db.js';
 import { createNote, updateNote, deleteNote, getNote, listNotes } from './lib/notes.js';
 import { nextCard, answer, undo, counts, nextDue } from './lib/scheduler.js';
-import { breakdown, charDetail, autoPinyin, autoEnglish, deckIndex, hanChars } from './lib/hanzi.js';
+import { breakdown, charDetail, autoPinyin, autoEnglish, deckIndex, hanChars, whyFacts, offlineWhy } from './lib/hanzi.js';
 import { stats } from './lib/stats.js';
 import { offlineSuggestions, storedSuggestions, claudeSuggestions, dismissSuggestion } from './lib/suggest.js';
-import { draftCard, aiConfigured } from './lib/claude.js';
+import { draftCard, explainWhy, aiConfigured } from './lib/claude.js';
 
 const PORT = Number(process.env.PORT) || 4747;
 const PUBLIC = path.join(ROOT, 'public');
@@ -43,6 +43,14 @@ const routes = [
     return { text, tree: breakdown(text), pinyin: autoPinyin(text), ...autoEnglish(text), noteId: deckIndex().exact.get(hanChars(text).join('')) ?? null };
   }],
   ['GET', '/api/char/:ch', ({ params }) => charDetail(params.ch)],
+  // "Why is it built like this?" — dictionary sentence straight away, Claude's fuller one when available.
+  ['GET', '/api/why', async ({ query }) => {
+    const text = hanChars(query.get('text') || '').join('');
+    if (!text) throw fail(400, 'Nothing to explain.');
+    const offline = offlineWhy(text);
+    const res = await explainWhy(whyFacts(text));
+    return res.ok && res.data.why.trim() ? { why: res.data.why.trim(), source: 'claude' } : { why: offline, source: 'dictionary', aiError: res.reason };
+  }],
   ['POST', '/api/draft', async ({ body }) => {
     const hanzi = String(body.hanzi || '').trim();
     if (!hanChars(hanzi).length) throw fail(400, 'Type some Chinese characters.');

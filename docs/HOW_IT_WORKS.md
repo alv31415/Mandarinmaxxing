@@ -178,6 +178,15 @@ Each node carries:
 - `inChars`: for a component, how many characters in your deck contain it.
 - `role`: `radical`, `meaning` or `sound`, when the data says so. Most characters are a meaning part plus a sound part, and seeing that is the main payoff of breaking them down.
 
+### "Why it is built this way"
+
+The side panel shows a reminder sentence for any character or word. It has two sources:
+
+- `offlineWhy()` builds a short sentence from the reference data alone: the recorded origin hint, or "X gives the meaning; Y gives the sound". It appears instantly and works offline.
+- `explainWhy()` in `lib/claude.js` sends the same facts (`whyFacts()`) to Claude and gets a fuller sentence, which replaces the short one a moment later. The answer is cached, so each character is asked about once.
+
+Claude is given the recorded etymology and told to keep history and memory tricks apart: when a part is only there for its sound, or the real origin is obscure, it has to say so. Without that instruction a model will happily invent a plausible story for every character.
+
 **Why components stop where they do.** Decomposing all the way down ends in single strokes (二 into 一 and 一), which teaches nothing. A component is opened further only if one of its own parts is itself a compound.
 
 **Why the tree is computed and not stored.** `deckIndex()` scans all notes once and builds lookup tables (character → notes, component → characters). Adding or deleting a card needs no bookkeeping: the next request simply sees the new deck.
@@ -204,7 +213,7 @@ Both kinds of suggestion follow one principle: a good next word is useful and cl
 
 ## 8. Claude (`lib/claude.js`)
 
-All API use is in this one file, behind three functions: `draftCard`, `polishPinyin`, `suggestWords`.
+All API use is in this one file, behind four functions: `draftCard`, `polishPinyin`, `suggestWords`, `explainWhy`.
 
 Design rules it follows:
 

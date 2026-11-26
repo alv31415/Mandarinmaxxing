@@ -37,6 +37,10 @@ Everything you create lives in `data/user.db`. To back up, copy that file while 
 
 See [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md) for a guided tour of the code and the reasons behind the design.
 
+## Licence
+
+The code is released under the [MIT licence](LICENSE). The reference data it downloads is not part of this repository and keeps its own licences, listed below.
+
 ## Data sources
 
 - [CC-CEDICT](https://www.mdbg.net/chinese/dictionary?page=cc-cedict) (CC BY-SA 4.0): dictionary
